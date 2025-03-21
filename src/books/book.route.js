@@ -1,45 +1,42 @@
-const express = require("express");
-const Book = require("./book.model");
-const { postABook, getAllBooks, getSingleBook, UpdateBook, deleteABook } = require("./book.controller");
-const verifyAdminToken = require("../middleware/verifyAdminToken");
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+const mongoose = require('mongoose');
 
-const router = express.Router();
-
-// ✅ Ensure Uploads Directory Exists
-const uploadDir = path.join(__dirname, "../../uploads");
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// ✅ Multer Setup for File Uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadDir);
+const bookSchema = new mongoose.Schema({
+    title: {
+        type: String,
+        required: true,
     },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
+    description: {
+        type: String,
+        required: true,
     },
+    category: {
+        type: String,
+        required: true,
+    },
+    trending: {
+        type: Boolean,
+        required: true,
+    },
+    coverImage: {
+        type: String,
+        required: false, // Made optional
+    },
+    oldPrice: {
+        type: Number,
+        required: true,
+    },
+    newPrice: {
+        type: Number,
+        required: true,
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    }
+}, {
+    timestamps: true,
 });
 
-const upload = multer({ storage });
+const Book = mongoose.model('Book', bookSchema);
 
-// ✅ Post a Book (with File Upload)
-router.post("/create-book", verifyAdminToken, upload.single("coverImage"), postABook);
-
-// ✅ Get All Books
-router.get("/", getAllBooks);
-
-// ✅ Get Single Book
-router.get("/:id", getSingleBook);
-
-// ✅ Update a Book
-router.put("/edit/:id", verifyAdminToken, UpdateBook);
-
-// ✅ Delete a Book
-router.delete("/:id", verifyAdminToken, deleteABook);
-
-module.exports = router;
+module.exports = Book;
