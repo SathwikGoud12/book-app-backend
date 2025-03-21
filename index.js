@@ -3,6 +3,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const path = require("path");
 require("dotenv").config();
+const fs = require("fs");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -13,7 +14,7 @@ if (!process.env.DB_URL) {
   process.exit(1);
 }
 
-// ✅ Middleware for JSON parsing & URL encoded data
+// ✅ Middleware for JSON Parsing & URL Encoded Data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -23,12 +24,13 @@ const allowedOrigins = [
   "http://127.0.0.1:5173",
   "https://book-app-frontend-blush.vercel.app",
   "https://book-app-backend-rho.vercel.app",
+  "https://*.vercel.app" // Wildcard for Vercel deployments
 ];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
         callback(null, true);
       } else {
         console.warn(`🚨 CORS Blocked: ${origin}`);
@@ -40,8 +42,14 @@ app.use(
   })
 );
 
+// ✅ Ensure Uploads Folder Exists
+const uploadDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
 // ✅ Serve Static Files for Uploaded Images
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(uploadDir));
 
 // ✅ Import Routes
 const bookRoutes = require("./src/books/book.route");

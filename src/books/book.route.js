@@ -1,16 +1,23 @@
-const express = require('express');
-const Book = require('./book.model');
-const { postABook, getAllBooks, getSingleBook, UpdateBook, deleteABook } = require('./book.controller');
-const verifyAdminToken = require('../middleware/verifyAdminToken');
-const multer = require('multer');
-const path = require('path');
+const express = require("express");
+const Book = require("./book.model");
+const { postABook, getAllBooks, getSingleBook, UpdateBook, deleteABook } = require("./book.controller");
+const verifyAdminToken = require("../middleware/verifyAdminToken");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 
 const router = express.Router();
 
-// Multer setup for file uploads
+// ✅ Ensure Uploads Directory Exists
+const uploadDir = path.join(__dirname, "../../uploads");
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// ✅ Multer Setup for File Uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/');
+        cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
@@ -20,19 +27,19 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Post a book (with file upload)
-router.post("/create-book", verifyAdminToken, upload.single('coverImage'), postABook);
+// ✅ Post a Book (with File Upload)
+router.post("/create-book", verifyAdminToken, upload.single("coverImage"), postABook);
 
-// Get all books
+// ✅ Get All Books
 router.get("/", getAllBooks);
 
-// Single book endpoint
+// ✅ Get Single Book
 router.get("/:id", getSingleBook);
 
-// Update a book endpoint
+// ✅ Update a Book
 router.put("/edit/:id", verifyAdminToken, UpdateBook);
 
-// Delete a book
+// ✅ Delete a Book
 router.delete("/:id", verifyAdminToken, deleteABook);
 
 module.exports = router;
