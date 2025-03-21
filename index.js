@@ -14,23 +14,19 @@ if (!process.env.DB_URL) {
   process.exit(1);
 }
 
-// ✅ Middleware for JSON Parsing & URL Encoded Data
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// ✅ Improved CORS Configuration
+// ✅ Allowed Origins for CORS
 const allowedOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
   "https://book-app-frontend-blush.vercel.app",
   "https://book-app-backend-rho.vercel.app",
-  "https://*.vercel.app" // Wildcard for Vercel deployments
 ];
 
+// ✅ Improved CORS Configuration
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         console.warn(`🚨 CORS Blocked: ${origin}`);
@@ -38,9 +34,17 @@ app.use(
       }
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// ✅ Handle Preflight Requests for All Routes
+app.options("*", cors());
+
+// ✅ JSON Parsing Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // ✅ Ensure Uploads Folder Exists
 const uploadDir = path.join(__dirname, "uploads");
