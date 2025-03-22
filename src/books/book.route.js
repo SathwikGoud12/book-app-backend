@@ -1,42 +1,28 @@
-const mongoose = require('mongoose');
+const express = require('express');
+const Book = require('./book.model');
+const { postABook, getAllBooks, getSingleBook, UpdateBook, deleteABook } = require('./book.controller');
+const verifyAdminToken = require('../middleware/verifyAdminToken');
+const router =  express.Router();
 
-const bookSchema = new mongoose.Schema({
-    title: {
-        type: String,
-        required: true,
-    },
-    description: {
-        type: String,
-        required: true,
-    },
-    category: {
-        type: String,
-        required: true,
-    },
-    trending: {
-        type: Boolean,
-        required: true,
-    },
-    coverImage: {
-        type: String,
-        required: false, // Made optional
-    },
-    oldPrice: {
-        type: Number,
-        required: true,
-    },
-    newPrice: {
-        type: Number,
-        required: true,
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    }
-}, {
-    timestamps: true,
-});
+// frontend => backend server => controller => book schema  => database => send to server => back to the frontend
+//post = when submit something fronted to db
+// get =  when get something back from db
+// put/patch = when edit or update something
+// delete = when delete something
 
-const Book = mongoose.model('Book', bookSchema);
+// post a book
+router.post("/create-book", verifyAdminToken, postABook)
 
-module.exports = Book;
+// get all books
+router.get("/", getAllBooks);
+
+// single book endpoint
+router.get("/:id", getSingleBook);
+
+// update a book endpoint
+router.put("/edit/:id", verifyAdminToken, UpdateBook);
+
+router.delete("/:id", verifyAdminToken, deleteABook)
+
+
+module.exports = router;
