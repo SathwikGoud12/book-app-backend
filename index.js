@@ -1,38 +1,67 @@
+require("dotenv").config();
 const express = require("express");
-const app = express();
-const cors = require("cors");
-
 const mongoose = require("mongoose");
-const port = process.env.PORT || 5000;
-require('dotenv').config()
+const cors = require("cors");
+const path = require("path");
 
-// middleware
-app.use(express.json());
+const app = express();
+const port = process.env.PORT || 5000;
+
+// ✅ Middleware
+app.use(express.json()); // Parses JSON request bodies
 app.use(cors({
     origin: ['http://localhost:5173', 'https://book-app-frontend-tau.vercel.app'],
     credentials: true
-}))
+}));
 
-// routes
+// ✅ Serve static images from "uploads" folder
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// ✅ Routes
 const bookRoutes = require('./src/books/book.route');
-const orderRoutes = require("./src/orders/order.route")
-const userRoutes =  require("./src/users/user.route")
-const adminRoutes = require("./src/stats/admin.stats")
+const orderRoutes = require("./src/orders/order.route");
+const userRoutes = require("./src/users/user.route");
+const adminRoutes = require("./src/stats/admin.stats");
 
-app.use("/api/books", bookRoutes)
-app.use("/api/orders", orderRoutes)
-app.use("/api/auth", userRoutes)
-app.use("/api/admin", adminRoutes)
+// ✅ Use API Routes
+app.use("/api/books", bookRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/auth", userRoutes);
+app.use("/api/admin", adminRoutes);
 
-async function main() {
-  await mongoose.connect(process.env.DB_URL);
-  app.use("/", (req, res) => {
-    res.send("Book Store Server is running!");
-  });
+// ✅ Default route
+app.get("/", (req, res) => {
+    res.send("📚 Book Store Server is running!");
+});
+
+// ✅ MongoDB Connection Function
+async function connectDB() {
+    try {
+        const dbUrl = process.env.DB_URL;
+        if (!dbUrl) {
+            throw new Error("❌ Missing MongoDB connection string in .env file!");
+        }
+
+        await mongoose.connect(dbUrl, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        });
+
+        console.log("✅ MongoDB connected successfully!");
+    } catch (err) {
+        console.error("❌ MongoDB connection error:", err.message);
+        process.exit(1); // Exit process with failure
+    }
 }
 
-main().then(() => console.log("Mongodb connect successfully!")).catch(err => console.log(err));
+// ✅ Handle MongoDB Connection Events
+mongoose.connection.on("connected", () => console.log("✅ MongoDB connected!"));
+mongoose.connection.on("disconnected", () => console.log("⚠️ MongoDB disconnected!"));
+mongoose.connection.on("error", (err) => console.error("❌ MongoDB error:", err.message));
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+// ✅ Start Server after MongoDB Connection
+connectDB().then(() => {
+    app.listen(port, () => {
+        console.log(`🚀 Server running at http://localhost:${port}`);
+    });
 });

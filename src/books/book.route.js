@@ -1,28 +1,41 @@
-const express = require('express');
-const Book = require('./book.model');
-const { postABook, getAllBooks, getSingleBook, UpdateBook, deleteABook } = require('./book.controller');
-const verifyAdminToken = require('../middleware/verifyAdminToken');
-const router =  express.Router();
+const express = require("express");
+const multer = require("multer");
+const {
+    postABook,
+    getAllBooks,
+    getSingleBook,
+    updateBook,
+    deleteABook,
+} = require("./book.controller");
+const verifyAdminToken = require("../middleware/verifyAdminToken");
 
-// frontend => backend server => controller => book schema  => database => send to server => back to the frontend
-//post = when submit something fronted to db
-// get =  when get something back from db
-// put/patch = when edit or update something
-// delete = when delete something
+const router = express.Router();
 
-// post a book
-router.post("/create-book", verifyAdminToken, postABook)
+// 🟢 Multer Setup for File Uploads
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "uploads/"); // Ensure this folder exists in your project
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + "-" + file.originalname);
+    },
+});
 
-// get all books
+const upload = multer({ storage });
+
+// ✅ Post a book with file upload
+router.post("/create-book", verifyAdminToken, upload.single("coverImage"), postABook);
+
+// ✅ Get all books
 router.get("/", getAllBooks);
 
-// single book endpoint
+// ✅ Get single book
 router.get("/:id", getSingleBook);
 
-// update a book endpoint
-router.put("/edit/:id", verifyAdminToken, UpdateBook);
+// ✅ Update a book (Include file handling if needed)
+router.put("/edit/:id", verifyAdminToken, upload.single("coverImage"), updateBook);
 
-router.delete("/:id", verifyAdminToken, deleteABook)
-
+// ✅ Delete a book
+router.delete("/:id", verifyAdminToken, deleteABook);
 
 module.exports = router;
