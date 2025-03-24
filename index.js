@@ -9,13 +9,29 @@ const port = process.env.PORT || 5000;
 
 // ✅ Middleware
 app.use(express.json()); // Parses JSON request bodies
+
+// ✅ CORS Configuration (Allows Frontend to Access Backend)
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://book-app-frontend-blush.vercel.app'
+];
+
 app.use(cors({
-    origin: ['http://localhost:5173', 'https://book-app-frontend-tau.vercel.app'],
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("❌ CORS Not Allowed"));
+        }
+    },
     credentials: true
 }));
 
-// ✅ Serve static images from "uploads" folder
+// ✅ Serve static images (⚠️ Not recommended for Vercel)
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.get("/uploads/*", (req, res) => {
+    res.status(400).send("⚠️ Image hosting does not work on Vercel. Use cloud storage instead.");
+});
 
 // ✅ Routes
 const bookRoutes = require('./src/books/book.route');
@@ -50,7 +66,8 @@ async function connectDB() {
         console.log("✅ MongoDB connected successfully!");
     } catch (err) {
         console.error("❌ MongoDB connection error:", err.message);
-        process.exit(1); // Exit process with failure
+        // Don't crash server; retry connection in 5 seconds
+        setTimeout(connectDB, 5000);
     }
 }
 
